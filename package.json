@@ -1,0 +1,17 @@
+{
+  "name": "node_server",
+  "version": "1.0.0",
+  "description": "Web server based on native HTTP Node's module",
+  "main": "app.js",
+  "dependencies": {
+    "mime": "^1.3.4"
+  },
+  "devDependencies": {
+    "mime": "^1.3.4"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Viacheslav Karnaukh",
+  "license": "MIT"
+}
