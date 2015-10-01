@@ -5,7 +5,7 @@ var db = require('./fake-db');
 
 try {
 	var mime = require('mime');
-} catch(e) {
+} catch (e) {
 	console.log(e.message, '\nPlease install package.json first ($ npm install)');
 	process.exit(1);
 }
@@ -19,7 +19,6 @@ http.createServer(function(req, res) {
 	function isReqTo(dest) {
 		return dest === '/' ? dest === req.url : RegExp('^\/' + dest).test(req.url);
 	}
-
 	function readStreamAnd(dbMethod) {
 		var response = '';
 		req.on('readable', function(chunk) {
@@ -30,34 +29,34 @@ http.createServer(function(req, res) {
 		req.on('end', function() {
 			dbMethod(JSON.parse(response), function(err, model) {
 				if (err) {
-					res.writeHead(500, {
-						'Content-Type': 'text/html'
-					});
+					res.writeHead(500, {'Content-Type': 'text/html'});
 					res.end('<h1>' + http.STATUS_CODES[500] + '</h1><h3>' + err + '</h3>');
 				}
 				res.end(JSON.stringify(model));
 			});
 		});
 	}
+	function handleError(code, message) {
+		console.log([
+			new Date().toTimeString().slice(0,8),
+			http.STATUS_CODES[code],
+			message
+		].join(' '));
+		res.writeHead(code, {'Content-Type': 'text/html'});
+		res.end('<h1>' + http.STATUS_CODES[code] + '</h1><h3>' + message + '</h3>');
+	}
 
 	if (isReqTo('/')) {
 		fs.createReadStream(path.join(basePath, 'views/index.html')).pipe(res);
 	} else if (isReqTo('public')) {
-		res.writeHead(200, {
-			'Content-Type': mime.lookup(filePath)
-		});
+		res.writeHead(200, {'Content-Type': mime.lookup(filePath)});
 		fs.createReadStream(filePath).pipe(res);
 	} else if (isReqTo('api/users\/?$')) {
 		res.setHeader('Content-Type', 'application/json');
 		switch (req.method) {
 			case 'GET':
 				db.getCollection(function(err, model) {
-					if (err) {
-						res.writeHead(500, {
-							'Content-Type': 'text/html'
-						});
-						res.end('<h1>' + http.STATUS_CODES[500] + '</h1><h3>Cannot get data. DB is not implemented.</h3>');
-					}
+					if (err) handleError(500, 'Cannot get data. DB is not implemented.');
 					res.end(JSON.stringify(model));
 				});
 				break;
@@ -71,23 +70,13 @@ http.createServer(function(req, res) {
 		switch (req.method) {
 			case 'GET':
 				db.getById(id, function(err, model) {
-					if (err) {
-						res.writeHead(500, {
-							'Content-Type': 'text/html'
-						});
-						res.end('<h1>' + http.STATUS_CODES[500] + '</h1><h3>' + err + '</h3>');
-					}
+					if (err) handleError(500, err);
 					res.end(JSON.stringify(model));
 				});
 				break;
 			case 'DELETE':
 				db.remove(id, function(err) {
-					if (err) {
-						res.writeHead(500, {
-							'Content-Type': 'text/html'
-						});
-						res.end('<h1>' + http.STATUS_CODES[500] + '</h1><h3>' + err + '</h3>');
-					}
+					if (err) handleError(500, err);
 					res.end();
 				});
 				break;
@@ -96,10 +85,7 @@ http.createServer(function(req, res) {
 				break;
 		}
 	} else {
-		res.writeHead(404, {
-			'Content-Type': 'text/html'
-		});
-		res.end('<h1>' + http.STATUS_CODES[404] + '</h1>' + '<h3>' + req.headers.host + req.url + '</h3>');
+		handleError(404, req.headers.host + req.url);
 	}
 }).listen(port);
 
